@@ -17,14 +17,14 @@ const REST_KEY = process.env.ONESIGNAL_REST_API_KEY;
 const SECRET = process.env.BACKEND_API_SECRET;
 
 app.post('/send-notification', async (req, res) => {
-  const { apiSecret, title, message, type = "notice", url = "" } = req.body;
+  const { apiSecret, title, message, type = "notice", url = "", image } = req.body;
 
   if (apiSecret !== SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
-    const payload = {
+    let payload = {
       app_id: APP_ID,
       included_segments: ["All"],
       headings: { en: title },
@@ -34,6 +34,12 @@ app.post('/send-notification', async (req, res) => {
         url,
       },
     };
+
+if (image?.trim()) {
+      payload.big_picture = image; // Android
+      payload.ios_attachments = { id: image }; // iOS
+      payload.chrome_web_image = image; // Web
+    }
 
     const onesignalRes = await axios.post(ONESIGNAL_URL, payload, {
       headers: {
@@ -48,7 +54,7 @@ app.post('/send-notification', async (req, res) => {
     });
 
   } catch (err) {
-    console.log(err);
+    console.log(err.response?.data || err.message);
     res.status(500).json({ error: err.message });
   }
 });
